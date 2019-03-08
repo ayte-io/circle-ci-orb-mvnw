@@ -1,0 +1,33 @@
+version: 2.1
+orbs:
+  orbs: circleci/orb-tools@8.3.0
+jobs:
+  verify:
+    docker:
+      - image: circleci/openjdk
+    steps:
+      - checkout
+      - mvnw/install
+      - mvnw/circle:
+          command: clean package
+
+workflows:
+  default:
+    jobs:
+      - verify:
+          filters:
+            tags:
+              only: /.*/
+      - orbs/publish:
+          orb-path: .circleci/orbs/mvnw.yml
+          orb-ref: ayte/mvnw@$CIRCLE_TAG
+          publish-token-variable: CIRCLE_CI_TOKEN
+          requires:
+            - verify
+          context: 'ayte:circle:orbs'
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /\d+\.\d+\.\d+/
+

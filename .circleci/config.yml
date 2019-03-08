@@ -1,11 +1,128 @@
-version: 2.1
 jobs:
-  build:
+  verify:
     docker:
-      images:
-        - circleci/openjdk
+    - image: circleci/openjdk
     steps:
-      - checkout
-      - mvnw/install
-      - mvnw/circle:
-          command: clean package
+    - checkout
+    - mvnw/install
+    - mvnw/circle:
+        command: clean package
+orbs:
+  mvnw:
+    commands:
+      circle:
+        description: |
+          Runs Maven Wrapper with assumption of settings.xml being located
+          in .circleci and local repository being managed under .circleci/m2
+        parameters:
+          command:
+            description: Command to run
+            type: string
+          directory:
+            default: .
+            description: |
+              Directory to operate in. Use it if your pom.xml is not placed
+              in current directory.
+            type: string
+          executable:
+            default: ./mvnw
+            description: Executable to pass command to, defaults to `./mvnw`
+            type: string
+          file:
+            default: pom.xml
+            description: |
+              Name for POM file in case it's something different rather than
+              standard pom.xml
+            type: string
+          repository:
+            default: .circleci/m2
+            description: Path that will be used as local repository
+            type: string
+          settings:
+            default: .circleci/settings.xml
+            description: Path to maven settings
+            type: string
+        steps:
+        - mvnw:
+            command: << parameters.command >>
+            directory: << parameters.directory >>
+            executable: << parameters.executable >>
+            file: << parameters.file >>
+            repository: << parameters.repository >>
+            settings: << parameters.settings >>
+      install:
+        steps:
+        - run:
+            command: |
+              mkdir /tmp/mvnw
+              (cd /tmp/mvnw; mvn -N io.takari:maven:wrapper)
+              mv /tmp/mvnw/* .
+              mv /tmp/mvnw/.mvn .
+            name: Maven Wrapper Installation
+      mvnw:
+        description: |
+          Simply runs maven wrapper with defaults, no magic in here.
+        parameters:
+          command:
+            description: Command to run
+            type: string
+          directory:
+            default: .
+            description: |
+              Directory to operate in. Use it if your pom.xml is not placed
+              in current directory.
+            type: string
+          executable:
+            default: ./mvnw
+            description: Executable to pass command to, defaults to `./mvnw`
+            type: string
+          file:
+            default: pom.xml
+            description: |
+              Name for POM file in case it's something different rather than
+              standard pom.xml
+            type: string
+          repository:
+            default: ~/.m2
+            description: Path that will be used as local repository
+            type: string
+          settings:
+            default: ~/.m2/settings.xml
+            description: Path to maven settings
+            type: string
+        steps:
+        - run:
+            command: |
+              << parameters.executable >> \
+                -s << parameters.settings >> \
+                "-Dmaven.repo.local=<< parameters.repository >>" \
+                -f << parameters.directory >>/<< parameters.file >> \
+                << parameters.command >>
+            name: mvnw << parameters.command >>
+    description: |
+      A simple orb that runs mvnw comamnds, expects maven settings to be
+      under .circleci/settings.xml and uses .circleci/m2 as maven repo,
+      so it can be cached
+    version: 2.1
+  orbs: circleci/orb-tools@8.3.0
+version: 2.1
+workflows:
+  default:
+    jobs:
+    - verify:
+        filters:
+          tags:
+            only: /.*/
+    - orbs/publish:
+        context: ayte:circle:orbs
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /\d+\.\d+\.\d+/
+        orb-path: .circleci/orbs/mvnw.yml
+        orb-ref: ayte/mvnw@$CIRCLE_TAG
+        publish-token-variable: CIRCLE_CI_TOKEN
+        requires:
+        - verify
+

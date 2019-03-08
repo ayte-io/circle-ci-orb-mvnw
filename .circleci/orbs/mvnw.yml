@@ -1,62 +1,96 @@
 version: 2.1
+description: |
+  A simple orb that runs mvnw comamnds, expects maven settings to be
+  under .circleci/settings.xml and uses .circleci/m2 as maven repo,
+  so it can be cached
 commands:
   mvnw:
+    description: |
+      Simply runs maven wrapper with defaults, no magic in here.
     parameters:
       settings:
+        description: Path to maven settings
         type: string
         default: ~/.m2/settings.xml
       repository:
+        description: Path that will be used as local repository
         type: string
         default: ~/.m2
       directory:
+        description: |
+          Directory to operate in. Use it if your pom.xml is not placed
+          in current directory.
         type: string
         default: .
       file:
+        description: |
+          Name for POM file in case it's something different rather than
+          standard pom.xml
         type: string
         default: pom.xml
       executable:
+        description: Executable to pass command to, defaults to `./mvnw`
         type: string
         default: ./mvnw
       command:
+        description: Command to run
         type: string
     steps:
-      run:
-        name: mvnw << parameters.command >>
-        command: |
-          << parameters.executable >> \
-            -s << parameters.settings >> \
-            -f << parameters.directory >>/<< parameters.file >> \
-            << parameters.command >>
+      - run:
+          name: mvnw << parameters.command >>
+          command: |
+            << parameters.executable >> \
+              -s << parameters.settings >> \
+              "-Dmaven.repo.local=<< parameters.repository >>" \
+              -f << parameters.directory >>/<< parameters.file >> \
+              << parameters.command >>
   circle:
+    description: |
+      Runs Maven Wrapper with assumption of settings.xml being located
+      in .circleci and local repository being managed under .circleci/m2
     parameters:
       settings:
+        description: Path to maven settings
         type: string
         default: .circleci/settings.xml
       repository:
+        description: Path that will be used as local repository
         type: string
-        default: .circleci/.m2
+        default: .circleci/m2
       directory:
+        description: |
+          Directory to operate in. Use it if your pom.xml is not placed
+          in current directory.
         type: string
         default: .
       file:
+        description: |
+          Name for POM file in case it's something different rather than
+          standard pom.xml
         type: string
         default: pom.xml
       executable:
+        description: Executable to pass command to, defaults to `./mvnw`
         type: string
         default: ./mvnw
       command:
+        description: Command to run
         type: string
     steps:
-      mvnw/mvnw:
-        settings: << parameters.settings >>
-        repository: << parameters.repository >>
-        directory: << parameters.command >>
-        file: << parameters.file >>
-        executable: << parameters.executable >>
-        command: << parameters.command >>
+      - mvnw:
+          settings: << parameters.settings >>
+          repository: << parameters.repository >>
+          directory: << parameters.directory >>
+          file: << parameters.file >>
+          executable: << parameters.executable >>
+          command: << parameters.command >>
   install:
     steps:
-      run:
-        name: Maven Wrapper Installation
-        command: mvn -N io.takari:maven:wrapper
+      - run:
+          name: Maven Wrapper Installation
+          command: |
+            mkdir /tmp/mvnw
+            (cd /tmp/mvnw; mvn -N io.takari:maven:wrapper)
+            mv /tmp/mvnw/* .
+            mv /tmp/mvnw/.mvn .
 
