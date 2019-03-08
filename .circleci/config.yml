@@ -1,11 +1,98 @@
-version: 2.1
 jobs:
-  build:
+  verify:
     docker:
-      images:
-        - circleci/openjdk
+    - image: circleci/openjdk
     steps:
-      - checkout
-      - mvnw/install
-      - mvnw/circle:
-          command: clean package
+    - checkout
+    - mvnw/install
+    - mvnw/circle:
+        command: clean package
+orbs:
+  mvnw:
+    commands:
+      circle:
+        parameters:
+          command:
+            type: string
+          directory:
+            default: .
+            type: string
+          executable:
+            default: ./mvnw
+            type: string
+          file:
+            default: pom.xml
+            type: string
+          repository:
+            default: .circleci/.m2
+            type: string
+          settings:
+            default: .circleci/settings.xml
+            type: string
+        steps:
+        - mvnw:
+            command: << parameters.command >>
+            directory: << parameters.directory >>
+            executable: << parameters.executable >>
+            file: << parameters.file >>
+            repository: << parameters.repository >>
+            settings: << parameters.settings >>
+      install:
+        steps:
+        - run:
+            command: |
+              mkdir /tmp/mvnw
+              (cd /tmp/mvnw; mvn -N io.takari:maven:wrapper)
+              mv /tmp/mvnw/* .
+              mv /tmp/mvnw/.mvn .
+            name: Maven Wrapper Installation
+      mvnw:
+        parameters:
+          command:
+            type: string
+          directory:
+            default: .
+            type: string
+          executable:
+            default: ./mvnw
+            type: string
+          file:
+            default: pom.xml
+            type: string
+          repository:
+            default: ~/.m2
+            type: string
+          settings:
+            default: ~/.m2/settings.xml
+            type: string
+        steps:
+        - run:
+            command: |
+              << parameters.executable >> \
+                -s << parameters.settings >> \
+                -f << parameters.directory >>/<< parameters.file >> \
+                << parameters.command >>
+            name: mvnw << parameters.command >>
+    version: 2.1
+  orbs: circleci/orb-tools@8.3.0
+version: 2.1
+workflows:
+  default:
+    jobs:
+    - verify:
+        filters:
+          tags:
+            only: /.*/
+    - orbs/publish:
+        context: ayte:circle:orbs
+        filters:
+          branches:
+            ignore: /.*/
+          tags:
+            only: /\d+\.\d+\.\d+/
+        orb-path: .circleci/orbs/mvnw.yml
+        orb-ref: ayte/mvnw@$CIRCLE_TAG
+        publish-token-variable: CIRCLE_CI_TOKEN
+        requires:
+        - verify
+
