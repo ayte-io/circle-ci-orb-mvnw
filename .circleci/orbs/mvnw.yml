@@ -1,0 +1,62 @@
+version: 2.1
+commands:
+  mvnw:
+    parameters:
+      settings:
+        type: string
+        default: ~/.m2/settings.xml
+      repository:
+        type: string
+        default: ~/.m2
+      directory:
+        type: string
+        default: .
+      file:
+        type: string
+        default: pom.xml
+      executable:
+        type: string
+        default: ./mvnw
+      command:
+        type: string
+    steps:
+      run:
+        name: mvnw << parameters.command >>
+        command: |
+          << parameters.executable >> \
+            -s << parameters.settings >> \
+            -f << parameters.directory >>/<< parameters.file >> \
+            << parameters.command >>
+  circle:
+    parameters:
+      settings:
+        type: string
+        default: .circleci/settings.xml
+      repository:
+        type: string
+        default: .circleci/.m2
+      directory:
+        type: string
+        default: .
+      file:
+        type: string
+        default: pom.xml
+      executable:
+        type: string
+        default: ./mvnw
+      command:
+        type: string
+    steps:
+      mvnw/mvnw:
+        settings: << parameters.settings >>
+        repository: << parameters.repository >>
+        directory: << parameters.command >>
+        file: << parameters.file >>
+        executable: << parameters.executable >>
+        command: << parameters.command >>
+  install:
+    steps:
+      run:
+        name: Maven Wrapper Installation
+        command: mvn -N io.takari:maven:wrapper
+

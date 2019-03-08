@@ -1,0 +1,11 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      images:
+        - circleci/openjdk
+    steps:
+      - checkout
+      - mvnw/install
+      - mvnw/circle:
+          command: clean package
