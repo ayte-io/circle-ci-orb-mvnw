@@ -35,6 +35,10 @@ commands:
       command:
         description: Command to run
         type: string
+      when:
+        description: '`always`, `on_success` or `on_fail`'
+        type: string
+        default: on_success
     steps:
       - run:
           name: mvnw << parameters.command >>
@@ -44,6 +48,7 @@ commands:
               "-Dmaven.repo.local=<< parameters.repository >>" \
               -f << parameters.directory >>/<< parameters.file >> \
               << parameters.command >>
+          when: << parameters.when >>
   circle:
     description: |
       Runs Maven Wrapper with assumption of settings.xml being located
@@ -76,6 +81,10 @@ commands:
       command:
         description: Command to run
         type: string
+      when:
+        description: '`always`, `on_success` or `on_fail`'
+        type: string
+        default: on_success
     steps:
       - mvnw:
           settings: << parameters.settings >>
@@ -84,7 +93,13 @@ commands:
           file: << parameters.file >>
           executable: << parameters.executable >>
           command: << parameters.command >>
+          when: << parameters.when >>
   install:
+    parameters:
+      when:
+        description: '`always`, `on_success` or `on_fail`'
+        type: string
+        default: on_success
     steps:
       - run:
           name: Maven Wrapper Installation
@@ -93,4 +108,4 @@ commands:
             (cd /tmp/mvnw; mvn -N io.takari:maven:wrapper)
             mv /tmp/mvnw/* .
             mv /tmp/mvnw/.mvn .
-
+          when: << parameters.when >>

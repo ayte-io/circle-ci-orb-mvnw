@@ -42,6 +42,10 @@ orbs:
             default: .circleci/settings.xml
             description: Path to maven settings
             type: string
+          when:
+            default: on_success
+            description: '`always`, `on_success` or `on_fail`'
+            type: string
         steps:
         - mvnw:
             command: << parameters.command >>
@@ -50,7 +54,13 @@ orbs:
             file: << parameters.file >>
             repository: << parameters.repository >>
             settings: << parameters.settings >>
+            when: << parameters.when >>
       install:
+        parameters:
+          when:
+            default: on_success
+            description: '`always`, `on_success` or `on_fail`'
+            type: string
         steps:
         - run:
             command: |
@@ -59,6 +69,7 @@ orbs:
               mv /tmp/mvnw/* .
               mv /tmp/mvnw/.mvn .
             name: Maven Wrapper Installation
+            when: << parameters.when >>
       mvnw:
         description: |
           Simply runs maven wrapper with defaults, no magic in here.
@@ -90,6 +101,10 @@ orbs:
             default: ~/.m2/settings.xml
             description: Path to maven settings
             type: string
+          when:
+            default: on_success
+            description: '`always`, `on_success` or `on_fail`'
+            type: string
         steps:
         - run:
             command: |
@@ -99,6 +114,7 @@ orbs:
                 -f << parameters.directory >>/<< parameters.file >> \
                 << parameters.command >>
             name: mvnw << parameters.command >>
+            when: << parameters.when >>
     description: |
       A simple orb that runs mvnw comamnds, expects maven settings to be
       under .circleci/settings.xml and uses .circleci/m2 as maven repo,
